@@ -63,9 +63,9 @@ void seal_sym_section(Elf64_Ehdr* ehdr, Elf64_Shdr* symtab, const char* prefix) 
       char* name = elf_lookup_string(ehdr, strtab_index, sym->st_name);
       if (memcmp(name, prefix, strlen(prefix)) == 0) continue;
       if (sym->st_shndx == SHN_UNDEF) continue;
-      if (sym->st_other != STV_HIDDEN && (type == STT_OBJECT || type == STT_FUNC)) {
+      if (sym->st_other == STV_DEFAULT && (type == STT_OBJECT || type == STT_FUNC)) {
 	printf("Hide global object %s: %s\n", name, types[type]);
-	sym->st_other = STV_HIDDEN;
+	sym->st_other = STV_PROTECTED;
       }
     }
   }
