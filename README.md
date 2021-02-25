@@ -9,6 +9,6 @@ symbols but having certain prefix to be hidden by default and thus not interferr
 with system libstc++.
 
 Actual selection of how to hide symbol may vary, and the least intrustive way seems
-to set ELF sysmbol's `st_other` field to STV_PROTECTED (see 
+to set ELF symbol's `st_other` field to `STV_PROTECTED` (see 
 https://sources.debian.org/src/glibc/2.19-18+deb8u9/elf/dl-lookup.c/#L788 for additional info).
 If required, more aggressive mechanisms, such as complete symbol rename is possible.
