@@ -71,17 +71,18 @@ void seal_sym_section(Elf64_Ehdr* ehdr, Elf64_Shdr* symtab, const char* prefix) 
   }
 }
 
-void seal_dynsym(void* base, const char* prefix) {
+int seal_dynsym(void* base, const char* prefix) {
   Elf64_Ehdr* ehdr = (Elf64_Ehdr*)base;
   if (memcmp(&ehdr->e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0) {
     printf("Not an ELF\n");
-    return;
+    return 1;
   }
-  if (ehdr->e_machine != EM_X86_64) {
-    printf("Incorrect machine %d, must be %d\n", ehdr->e_machine, EM_X86_64);
-    return;
+  if (ehdr->e_machine != EM_X86_64 && ehdr->e_machine != EM_AARCH64) {
+    printf("Incorrect machine %d, must be %d or %d\n", ehdr->e_machine, EM_X86_64, EM_AARCH64);
+    return 1;
   }
-  printf("Looks like an x64 ELF with %d sections\n", ehdr->e_shnum);
+  printf("Looks like an %s ELF with %d sections\n",
+	 ehdr->e_machine == EM_AARCH64 ? "arm64" : "x64", ehdr->e_shnum);
   for (int i = 0; i < ehdr->e_shnum; i++) {
     Elf64_Shdr* section = elf_section(ehdr, i);
     // In theory, enough to only seal SHT_DYNSYM.
@@ -90,29 +91,30 @@ void seal_dynsym(void* base, const char* prefix) {
       seal_sym_section(ehdr, section, prefix);
     }
   }
+  return 0;
 }
 
-void seal(const char* file, const char* prefix) {
+int seal(const char* file, const char* prefix) {
   void* base;
   off_t size;
   struct stat statbuf;
   int fd = open(file, O_RDWR);
   if (fd < 0) {
     perror("open");
-    return;
+    return 1;
   }
   if (fstat(fd, &statbuf) < 0) {
     perror("fstat");
-    return;
+    return 1;
   }
   size = statbuf.st_size;
   base = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (base == MAP_FAILED) {
     perror("mmap");
-    return;
+    return 1;
   }
   printf("ELF is %lld bytes, mapped to %p\n", (long long)size, base);
-  seal_dynsym(base, prefix);
+  return seal_dynsym(base, prefix);
 }
 
 int main(int argc, char** argv) {
@@ -131,6 +133,5 @@ int main(int argc, char** argv) {
   }
   printf("Modding %s: sealing all but \"%s_*\"\n", file, prefix);
   
-  seal(file, prefix);
-  return 0;
+  return seal(file, prefix);
 }
