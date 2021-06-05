@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Werror
+CFLAGS=-Wall -Werror -static
 SEALER=./sealer
 
 $(SEALER): sealer.c
@@ -6,3 +6,6 @@ $(SEALER): sealer.c
 
 run: $(SEALER)
 	$(SEALER) -f ./libskiko-linux-x64.so
+
+clean:
+	rm -f *.o $(SEALER)
